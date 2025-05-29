@@ -10,13 +10,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
-<<<<<<< HEAD
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-=======
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_TOKEN }}
->>>>>>> ce25310 (WIP: Saving local changes before rebase)
 
       - name: Checkout code
         uses: actions/checkout@v2
