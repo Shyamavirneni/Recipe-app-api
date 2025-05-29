@@ -1,1 +1,4 @@
-flake8>=3.9.2,<3.10
+# requirements-dev.txt
+flake8
+pytest
+# (add any other dev/test tools you use)
