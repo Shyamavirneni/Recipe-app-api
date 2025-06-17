@@ -8,6 +8,7 @@ from psycopg2 import OperationalError as Psycopg2Error
 from django.core.management import call_command
 from django.db.utils import OperationalError
 from django.test import SimpleTestCase
+from django.db import connections # Import connections to correctly refer to it in patch
 
 
 # This decorator only applies to the class.
@@ -16,26 +17,31 @@ from django.test import SimpleTestCase
 class CommandTests(SimpleTestCase):
     """Test commands."""
 
-    # @patch("core.management.commands.wait_for_db.Command.check") # Removed this redundant patch for the class level
-    def test_wait_for_db_ready(self): # Removed patched_check from here as it's not needed directly from the decorator
-        """Test waithing for database if database ready."""
-        # This test relies on the default behavior of call_command which invokes check implicitly.
-        # If Command.check needs to be mocked explicitly for this test, you'd add @patch here.
-        # Given your original intent, we'll mock check in the next test.
-        # This test passes if wait_for_db doesn't raise an error.
+    # test_wait_for_db_ready does not explicitly mock Command.check,
+    # as its purpose is to test the command runs without error when DB is available.
+    def test_wait_for_db_ready(self):
+        """Test waiting for database if database ready."""
+        # For this test, we assume the database is ready, so `call_command` should succeed.
+        # The `wait_for_db` command internally calls `connections['default'].ensure_connection()`.
+        # Since no side_effect is provided for it in this test, it proceeds as if connection is successful.
         call_command("wait_for_db")
-        # No assert_called_once_with here as we're not mocking check specifically for this test.
-        # If you meant to mock it here as well, add @patch("core.management.commands.wait_for_db.Command.check")
-        # immediately above this test method, and add `patched_check` back to its arguments.
+
 
     @patch('time.sleep')
-    @patch("django.db.utils.ConnectionHandler.ensure_connection") # Patching the specific method that raise OperationalError
-    def test_wait_for_db_delay(self, patched_check, patched_sleep): # Order reversed: check first, then sleep
+    # Patching the specific ensure_connection method on the 'default' connection object
+    @patch("django.db.connections.default.ensure_connection") 
+    def test_wait_for_db_delay(self, patched_ensure_connection, patched_sleep): # Renamed to reflect what is patched
         """Test waiting for database when getting operationalerror."""
-        # patched_check will be the mock for ensure_connection
-        patched_check.side_effect = [Psycopg2Error] * 2 + \
+        # Simulate OperationalError (Psycopg2Error for first two, then generic OperationalError)
+        # followed by success (True)
+        patched_ensure_connection.side_effect = [Psycopg2Error] * 2 + \
             [OperationalError] * 3 + [True]
+        
         call_command("wait_for_db")
-        self.assertEqual(patched_check.call_count, 6)
-        patched_check.assert_called_with(databases=["default"])
+        
+        # Verify that ensure_connection was called 6 times (2 Psycopg2Error + 3 OperationalError + 1 True)
+        self.assertEqual(patched_ensure_connection.call_count, 6)
+        
+        # Verify that ensure_connection was always called with no arguments
+        patched_ensure_connection.assert_called_with()
 
