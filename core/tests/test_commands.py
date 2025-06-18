@@ -21,10 +21,12 @@ class CommandTests(TestCase):
 
         mocked_check.assert_called_once_with(databases=['default'])
 
+
     @patch('core.management.commands.wait_for_db.Command.check')
     @patch('time.sleep')
     def test_wait_for_db_delay(self, mocked_sleep, mocked_check):
         """Test waiting for database when getting OperationalError."""
+        # Simulate 2 Psycopg2Error, 3 OperationalError, then True
         mocked_check.side_effect = [Psycopg2Error] * 2 + \
             [OperationalError] * 3 + [True]
 
