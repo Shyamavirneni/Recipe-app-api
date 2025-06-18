@@ -26,4 +26,4 @@ class Command(BaseCommand):
                 time.sleep(1)
         # Once database is available, print success message
         self.stdout.write(self.style.SUCCESS("Database available!"))
-
+        

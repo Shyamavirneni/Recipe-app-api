@@ -34,4 +34,4 @@ class CommandTests(TestCase):
 
         self.assertEqual(mocked_check.call_count, 6)
         mocked_check.assert_called_with(databases=['default'])
-
+        
